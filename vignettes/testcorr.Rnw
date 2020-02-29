@@ -1,0 +1,333 @@
+
+%\VignetteIndexEntry{The testcorr Package}
+%\VignetteDepends{}
+%\VignetteKeywords{autocorrelation, cross-correlation, Pearson correlation, i.i.d.}
+%\VignettePackage{testcorr}
+
+\documentclass[nojss]{jss}
+
+%% -- LaTeX packages and custom commands ---------------------------------------
+
+%% recommended packages
+\usepackage{thumbpdf,lmodern}
+
+%% new custom commands
+\newcommand{\class}[1]{`\code{#1}'}
+\newcommand{\fct}[1]{\code{#1()}}
+
+%% my packages
+\usepackage{amsmath}
+\usepackage{subfigure}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{geometry}
+\usepackage{enumitem}
+\geometry{left=0.9in,right=0.9in,top=1.3in,bottom=0.9in}
+\setlist[itemize]{labelsep=0.1cm,leftmargin=0.9cm,parsep=0cm}
+
+%% -------------------------------
+
+\author{Violetta Dalla\\National and Kapodistrian\\University of Athens \And Liudas Giraitis\\Queen Mary\\University of London \And Peter C. B. Phillips\\Yale University,\\University of Auckland,\\University of Southampton,\\Singapore Management University}
+\Plainauthor{Violetta Dalla, Liudas Giraitis, Peter C. B. Phillips}
+
+\title{The \pkg{testcorr} Package}
+\Plaintitle{The testcorr Package}
+\Shorttitle{The \pkg{testcorr} Package}
+
+\Abstract{
+The \proglang{R} package \pkg{testcorr} implements standard and robust procedures for testing the significance of the autocorrelation in univariate data and the cross-correlation in bivariate data. It also includes tests for the significance of pairwise Pearson correlation in multivariate data and the i.i.d. property for univariate data. The standard testing procedures on significance of correlation are used commonly by practitioners while their robust versions were developed in \cite{DallaGiraitisPhillips2019}, where the tests for i.i.d. property can be also found. This document briefly outlines the testing procedures and provides simple examples.
+}
+
+\Keywords{autocorrelation, cross-correlation, Pearson correlation, i.i.d., \proglang{R}}
+\Plainkeywords{autocorrelation, cross-correlation, Pearson correlation, i.i.d., R}
+
+\Address{Violetta Dalla\\
+  Department of Economics\\
+  National and Kapodistrian University of Athens\\
+  Athens 10559, Greece\\
+  E-mail: \email{vidalla@econ.uoa.gr}\\
+  URL: \url{http://en.econ.uoa.gr/contact-info-dalla-violeta.html}\\
+  ~\\
+  Liudas Giraitis\\
+  School of Economics and Finance\\
+  Queen Mary University of London\\
+  London E1 4NS, UK\\
+  E-mail: \email{l.giraitis@qmul.ac.uk}\\
+  URL: \url{https://www.qmul.ac.uk/sef/staff/liudasgiraitis.html}\\
+  ~\\
+  Peter C. B. Phillips\\
+  Department of Economics\\
+  Yale University\\
+  New Haven CT 06520-8281, USA\\
+  E-mail: \email{peter.phillips@yale.edu}\\
+  URL: \url{https://economics.yale.edu/people/faculty/peter-phillips}
+}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+\section{Introduction} \label{sec:intro}
+
+Inference on the significance of the autocorrelation $\rho_k={\rm corr}(x_t,x_{t-k})$ or the cross-correlation $\rho_{xy,k}={\rm corr}(x_t,y_{t-k})$ is a common first step in the analysis of univariate $\{x_t\}$ or bivariate $\{x_t,y_t\}$ time series data. Moreover, it is common to test the significance of pair-wise correlations $\rho_{x_ix_j}={\rm corr}(x_{it},x_{jt})$ in multivariate $\{x_{1t},x_{2t},...,x_{pt}\}$ data, cross-sectional or time series. Standard inference procedures\footnote{Like those implemented in the \pkg{stats} \citep{R}, \pkg{sarima} \citep{sarima}, \pkg{portes} \citep{portes} and \pkg{Hmisc} \citep{hmisc} packages, functions \code{stats::acf}, \code{stats::ccf}, \code{stats::Box.test}, \code{sarima::acfIidTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "iid"}, \code{portes::LjungBox}, \code{stats::cor.test} and \code{Hmisc::rcorr}.} are valid for i.i.d. univariate or mutually independent bivariate/multivariate data and their size can be significantly distorted otherwise, in particular, by heteroscedasticity and dependence. The robust methods\footnote{These robust methods are valid under more general settings compared to those in the \pkg{sarima} \citep{sarima} and \pkg{normwhn.test} \citep{normwhntest} packages, functions \code{sarima::acfGarchTest}, \code{sarima::acfWnTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "garch"} and \code{normwhn.test::whitenoise.test}.} given in \cite{DallaGiraitisPhillips2019} allow testing for significant autocorrelation/cross-correlation/correlation under more general settings, e.g., they allow for heteroscedasticity and dependence in each series and mutual dependence across series.
+
+The \proglang{R} \citep{R} package \pkg{testcorr} includes the functions \code{ac.test} and \code{cc.test} that implement the standard and robust procedures for testing significance of autocorrelation and cross-correlation, respectively. Moreover, the package provides the function \code{rcorr.test} that evaluates the sample Pearson correlation matrix for multivariate data with robust $p$-values for testing significance of its elements. The package also contains the function \code{iid.test} that conducts testing procedures for the i.i.d. property\footnote{Existing procedures include the rank test, the turning point test, the test for a Bernoulli scheme and the difference-sign test which are included in the package \pkg{spgs} \citep{spgs}, functions \code{spgs::rank.test}, \code{spgs::turningpoint.test}, \code{spgs::diid.test}, \code{spgs::diffsign.test}.} of univariate data introduced in \cite{DallaGiraitisPhillips2019}. Sections \ref{sec:actest}-\ref{sec:iidtest} describe the testing procedures that each function implements and provide examples. Section \ref{sec:rem} outlines some suggestions relating to the application of the testing procedures.
+
+\section[Testing zero autocorrelation: ac.test]{Testing zero autocorrelation: \code{ac.test}} \label{sec:actest}
+
+For a univariate time series $\{x_t\}$, given a sample $x_1,...,x_n$, the null hypothesis $H_0:\rho_k=0$ of no autocorrelation at lag $k=1,2,...$ is tested at $\alpha$ significance level using the sample autocorrelation $\widehat{\rho}_k$ and the $100(1-\alpha)\%$ confidence band (CB) for zero autocorrelation, obtained using the corresponding $t$-type statistics ($t_k$ ``standard'' and $\widetilde t_k$ ``robust'').\footnote{Robust CB for zero autocorrelation provides a robust acceptance region for $H_0$.}\textsuperscript{,}\footnote{The standard procedure is implemented by \code{stats::acf}, \code{sarima::acfIidTest} and \code{sarima::whiteNoiseTest} with \code{h0 = "iid"}.} The null hypothesis $H_0:\rho_1=...=\rho_m=0$ of no autocorrelation at cumulative lags $m=1,2,...$ is tested using portmanteau type statistics (Ljung-Box $LB_m$ ``standard'' and $\widetilde Q_m$ ``robust'').\footnote{The standard procedure is implemented by \code{stats::Box.test}, \code{sarima::acfIidTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "iid"} and \code{portes::LjungBox}.} The following notation is used. \medskip
+
+{\it Standard procedures}: \medskip
+
+$CB(100(1-\alpha)\%)=(-z_{\alpha/2}/\sqrt{n},z_{\alpha/2}/\sqrt{n}), \quad t_k=\sqrt{n}\widehat{\rho}_k, \quad LB_m=(n+2)n\sum\limits_{k=1}^{m}\frac{\widehat{\rho}_k^{\,2}}{n-k}.$ \medskip
+
+{\it Robust procedures}: \medskip
+
+$CB(100(1-\alpha)\%)=(-z_{\alpha/2}\frac{\widehat{\rho}_k}{\rule{0pt}{8pt}\widetilde{t}_k},z_{\alpha/2}\frac{\widehat{\rho}_k}{\rule{0pt}{8pt}\widetilde{t}_k}), \quad \widetilde{t}_k=\frac{\sum_{t=k+1}^n e_{tk}}{\left(\sum_{t=k+1}^n e_{tk}^2\right)^{1/2}}, \quad \widetilde{Q}_m=\widetilde{t}^{\,\prime}\,\widehat{R}^{*\,-1\,}\widetilde{t},$ \medskip
+
+where $e_{tk}=(x_{t}-\bar{x})(x_{t-k}-\bar{x})$, $\bar{x}=n^{-1}\sum_{t=1}^n x_t$, $\widetilde{t}=(\widetilde{t}_{1},...,\widetilde{t}_{m})^{\prime}$ and $\widehat{R}^*=(\widehat{r}_{jk}^{\,*})$ is a matrix with elements $\widehat{r}_{jk}^{\,*}=\widehat{r}_{jk} I(|\tau_{jk}|>\lambda)$ where $\lambda$ is the threshold,
+%
+\begin{equation*}
+\widehat{r}_{jk}=\frac{\sum_{t=\max(j,k)+1}^n e_{tj}e_{tk}}{(\sum_{t=\max(j,k)+1}^ne_{tj}^2)^{1/2}(\sum_{t=\max(j,k)+1}^ne_{tk}^2)^{1/2}}, \,\, \tau_{jk}=\frac{\sum_{t=\max(j,k)+1}^n e_{tj}e_{tk}}{(\sum_{t=\max(j,k)+1}^n e^2_{tj}e_{tk}^2)^{1/2}}.
+\end{equation*}
+%
+Applying standard and robust tests, at significance level $\alpha$, $H_0:\rho_k=0$ is rejected when $\widehat{\rho}_k \notin CB(100(1-\alpha)\%)$ or $|t_k|,|\widetilde{t}_k|>z_{\alpha/2}$. In turn, $H_0:\rho_1=...=\rho_m=0$ is rejected when $LB_m,\widetilde{Q}_m>\chi^2_{m,\alpha}$. Here, $z_{\alpha/2}$ and $\chi^2_{m,\alpha}$ stand for the upper $\alpha/2$ and $\alpha$ quantiles of $N$(0,1) and $\chi^2_{m}$ distributions.
+
+\subsection*{Example}
+
+We provide an example to illustrate testing for zero autocorrelation of a univariate time series $\{x_t\}$ using the function \code{ac.test}. We simulate $n=300$ data as GARCH(1,1): $x_t=\sigma_t \varepsilon_t$ with $\sigma_t^2=1+0.2x_{t-1}^2+0.7\sigma_{t-1}^2$ and $\varepsilon_t \sim$ i.i.d. $N$(0,1).\footnote{We initialize $\sigma^2_1={\rm var}(x_t)=10$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ is not autocorrelated but is not i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2019}. They find that the standard testing procedures are a bit oversized (e.g. by around 8\% when $k,m=1$), while the robust tests are correctly sized. We choose a realization where this is evident.
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> set.seed(1798)
+R> e <- rnorm(400)
+R> x <- matrix(0, nrow = 400, ncol = 1)
+R> s2 <- matrix(0, nrow = 400, ncol = 1)
+R> s2[1] <- 10
+R> x[1] <- sqrt(s2[1]) * e[1]
+R> for (t in 2:400) {
+R>   s2[t] <- 1 + 0.2 * (x[t - 1] ^ 2) + 0.7 * s2[t - 1]
+R>   x[t] <- sqrt(s2[t]) * e[t]
+R> }
+R> x <- x[101:400]
+\end{CodeInput}
+\end{CodeChunk}
+%
+We use the function \code{ac.test} to evaluate the results on testing for maximum 10 lags at significance level $\alpha=5\%$ with threshold $\lambda=2.576$. The plots are shown in the Plots pane and the table is printed on the Console. We don't pass any variable's name and set to 2 the scaling factor of the fonts in the plots.\footnote{The default values are \code{alpha = 0.05}, \code{lambda = 2.576}, \code{plot = TRUE}, \code{table = TRUE}, \code{var.name = NULL} and \code{scale.font = 1}. Setting \code{scale.font = 2} is useful in order to upscale the fonts in the plots in order to export them as displayed here; the default value is suggested for viewing the plots in the Plots pane.}
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> library(testcorr)
+R> ac.test(x, max.lag = 10, alpha = 0.05, lambda = 2.576, plot = TRUE,
++          table = TRUE, var.name = NULL, scale.font = 2)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We have the following testing outputs:
+
+\begin{figure}[h!]
+\centering
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_actest_corr.pdf}}
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_actest_q.pdf}}
+\end{figure}
+\pagebreak
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.98\textwidth]{ex_actest_tab.png}
+\end{figure}
+
+The left-hand side plot is graphing for maximum 10 lags, the sample autocorrelation $\widehat{\rho}_k$ (\code{"AC"}), the standard and robust CB(95\%). The right-hand side plot is graphing for maximum 10 lags, the cumulative test statistics $LB_m$, $\widetilde{Q}_m$ and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: standard $t_k$ (\code{"t"}) and $LB_m$ (\code{"LB"}) and robust $\widetilde{t}_k$ (\code{"t-tilde"}) and $\widetilde{Q}_m$ (\code{"Q-tilde"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$ac}, \code{\$scb}, \code{\$rcb}, \code{\$t}, \code{\$pvt}, \code{\$ttilde}, \code{\$pvttilde}, \code{\$lb}, \code{\$pvlb}, \code{\$qtilde}, \code{\$pvqtilde} at the end of the function call.
+
+From the left-hand side plot we can conclude that $H_0:\rho_k=0$ is rejected at $\alpha=5\%$ when $k=1,2$ and is not rejected at $\alpha=5\%$ when $k=3,...,10$ using standard methods, but is not rejected at $\alpha=5\%$ for any $k$ using robust methods. From the right-hand side plot we can conclude that the cumulative hypothesis $H_0:\rho_1=...=\rho_m=0$ is rejected at $\alpha=5\%$ for all $m$ using standard methods, but is not rejected at any $m$ using robust methods. Subsequently, from the $p$-values in the table we find that using standard methods, $H_0:\rho_k=0$ is rejected at $\alpha=1\%$ when $k=1,2$ and is not rejected at $\alpha=10\%$ when $k=3,...,10$, whereas using robust methods it is not rejected at $\alpha=10\%$ for any $k$. Using standard methods the cumulative hypothesis $H_0:\rho_1=...=\rho_m=0$ is rejected at $\alpha=0.1\%$ for $m=2$, at $\alpha=1\%$ when $m=1,3,...,6$ and at $\alpha=5\%$ for $m=7,...,10$, whereas using robust methods it is not rejected at $\alpha=10\%$ for any $m$. Overall, standard testing procedures show evidence of autocorrelation, although the series is not autocorrelated. The robust testing procedures provide the correct inference.
+
+\section[Testing zero cross-correlation: cc.test]{Testing zero cross-correlation: \code{cc.test}} \label{sec:cctest}
+
+For a bivariate time series $\{x_t,y_t\}$, given a sample $(x_1,...,x_n),(y_1,...,y_n)$, the null hypothesis $H_0:\rho_{xy,k}=0$ of no cross-correlation at lag $k=0,1,2,...$ is tested at $\alpha$ significance level using the sample cross-correlation $\widehat{\rho}_{xy,k}$ and the $100(1-\alpha)\%$ confidence band (CB) for zero cross-correlation, obtained using the corresponding $t$-type statistics ($t_{xy,k}$ ``standard'' and $\widetilde{t}_{xy,k}$ ``robust'').\footnote{Robust CB for zero cross-correlation provides a robust acceptance region for $H_0$.}\textsuperscript{,}\footnote{The standard procedure is implemented by \code{stats::ccf}.} The null hypothesis $H_0:\rho_{xy,0}=...=\rho_{xy,m}=0$ of no cross-correlation at cumulative lags $m=0,1,2,...$ is tested using portmanteau type statistics (Haugh-Box $HB_{xy,m}$ ``standard'' and $\widetilde Q_{xy,m}$ ``robust'').\footnote{The standard procedure is not provided in any \proglang{R} package. A version of the Haugh-Box statistic involving also the autocorrelations of each series is implemented by \code{portes::LjungBox}.} The following notation is used. \medskip
+
+{\it Standard procedures}: \medskip
+
+$CB(100(1-\alpha)\%)=(-z_{\alpha/2}/\sqrt{n},z_{\alpha/2}/\sqrt{n}), \quad t_{xy,k}=\sqrt{n}\widehat{\rho}_{xy,k}, \quad HB_{xy,m}=n^2\sum\limits_{k=0}^{m}\frac{\widehat{\rho}_{xy,k}^{\,2}}{n-k}.$ \medskip
+
+{\it Robust procedures}: \medskip
+
+$CB(100(1-\alpha)\%)=(-z_{\alpha/2}\frac{\widehat{\rho}_{xy,k}}{\rule{0pt}{9pt}\widetilde{t}_{xy,k}},z_{\alpha/2}\frac{\widehat{\rho}_{xy,k}}{\rule{0pt}{9pt}\widetilde{t}_{xy,k}}), \quad \widetilde{t}_{xy,k}=\frac{\sum_{t=k+1}^n e_{xy,tk}}{\left(\sum_{t=k+1}^n e_{xy,tk}^2\right)^{1/2}}, \quad \widetilde{Q}_{xy,m}=\widetilde{t}_{xy}^{\,\prime}\,\widehat{R}_{xy}^{*\,-1\,}\widetilde{t}_{xy},$ \medskip
+
+where $e_{xy,tk}=(x_{t}-\bar{x})(y_{t-k}-\bar{y})$, $\bar{x}=n^{-1}\sum_{t=1}^n x_t$, $\bar{y}=n^{-1}\sum_{t=1}^n y_t$, $\widetilde{t}_{xy}=(\widetilde{t}_{xy,0},...,\widetilde{t}_{xy,m})^{\prime}$ and $\widehat{R}^*_{xy}=(\widehat{r}_{xy,jk}^{\,*})$ is a matrix with elements $\widehat{r}_{xy,jk}^{\,*}=\widehat{r}_{xy,jk} I(|\tau_{xy,jk}|>\lambda)$ where $\lambda$ is the threshold,
+%
+\begin{equation*}
+\widehat{r}_{xy,jk}=\frac{\sum_{t=\max(j,k)+1}^n e_{xy,tj}e_{xy,tk}}{(\sum_{t=\max(j,k)+1}^ne_{xy,tj}^2)^{1/2}(\sum_{t=\max(j,k)+1}^ne_{xy,tk}^2)^{1/2}}, \,\, \tau_{xy,jk}=\frac{\sum_{t=\max(j,k)+1}^n e_{xy,tj}e_{xy,tk}}{(\sum_{t=\max(j,k)+1}^n e^2_{xy,tj}e_{xy,tk}^2)^{1/2}}.
+\end{equation*}
+%
+Applying standard and robust tests, at significance level $\alpha$, $H_0:\rho_{xy,k}=0$ is rejected when $\widehat{\rho}_{xy,k} \notin CB(100(1-\alpha)\%)$ or $|t_{xy,k}|,|\widetilde{t}_{xy,k}|>z_{\alpha/2}$. In turn, $H_0:\rho_{xy,0}=...=\rho_{xy,m}=0$ is rejected when $HB_{xy,m},\widetilde{Q}_{xy,m}>\chi^2_{m,\alpha}$. Here, $z_{\alpha/2}$ and $\chi^2_{m,\alpha}$ stand for the upper $\alpha/2$ and $\alpha$ quantiles of $N$(0,1) and $\chi^2_{m}$ distributions.
+
+The above procedures where outlined for $k,m\geq0$. For $k,m<0$, the tests are analogously defined, noting that $\widehat{\rho}_{xy,k}=\widehat{\rho}_{yx,-k}$, ${t}_{xy,k}={t}_{yx,-k}$, $\widetilde{t}_{xy,k}=\widetilde{t}_{yx,-k}$, $HB_{xy,m}=HB_{yx,-m}$, $\widetilde{Q}_{xy,m}=\widetilde{Q}_{yx,-m}.$
+
+\subsection*{Example}
+
+We provide an example to illustrate testing for zero cross-correlation of a bivariate time series $\{x_t,y_t\}$ using the function \code{cc.test}. We simulate $n=300$ data as noise and SV-AR(1) using the same noise in the AR(1) part: $x_t=\varepsilon_t$ and $y_t=\exp(z_t)u_t$ with $z_t=0.7z_{t-1}+\varepsilon_t$, $\varepsilon_t, u_t \sim$ i.i.d. $N$(0,1), $\{\varepsilon_t\}$ and $\{u_t\}$ mutually independent.\footnote{We initialize $z_1=Ez_t=0$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ and $\{y_t\}$ are uncorrelated but are not independent of each other, both are serially uncorrelated and only $\{x_t\}$ is i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2019}. They find that the standard testing procedures are rather oversized (e.g. by around 25\% when $k,m=0$), while the robust tests are correctly sized. We choose a realization where this is evident.
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> set.seed(227)
+R> e <- rnorm(400)
+R> set.seed(492)
+R> u <- rnorm(300)
+R> x <- e[101:400]
+R> z <- matrix(0, nrow = 400, ncol = 1)
+R> for (t in 2:400) {
+R>   z[t] <- 0.7 * z[t - 1] + e[t]
+R> }
+R> z <- z[101:400]
+R> y <- exp(z) * u
+\end{CodeInput}
+\end{CodeChunk}
+%
+We use the function \code{cc.test} to evaluate the results on testing for maximum $\pm10$ lags at significance level $\alpha=5\%$ with threshold $\lambda=2.576$. The plots are shown in the Plots pane and the table is printed on the Console. We don't pass any variables' names and set to 2 the scaling factor of the fonts in the plots.\footnote{The default values are \code{alpha = 0.05}, \code{lambda = 2.576}, \code{plot = TRUE}, \code{table = TRUE}, \code{var.names = NULL} and \code{scale.font = 1}. Setting \code{scale.font = 2} is useful in order to upscale the fonts in the plots in order to export them as displayed here; the default value is suggested for viewing the plots in the Plots pane.}
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> library(testcorr)
+R> cc.test(x, y, max.lag = 10, alpha = 0.05, lambda = 2.576, plot = TRUE,
++          table = TRUE, var.names = NULL, scale.font = 2)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We have the following testing outputs:
+
+\begin{figure}[h!]
+\centering
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_cctest_corr.pdf}}
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_cctest_q.pdf}}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.98\textwidth]{ex_cctest_tab.png}
+\end{figure}
+
+The left-hand side plot is graphing for maximum $\pm10$ lags, the sample cross-correlation $\widehat{\rho}_{xy,k}$ (\code{"CC"}), the standard and robust CB(95\%). The right-hand side plot is graphing for maximum $\pm$10 lags, the cumulative test statistics $HB_{xy,m}$, $\widetilde{Q}_{xy,m}$ and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: standard $t_{xy,k}$ (\code{"t"}) and $HB_{xy,m}$ (\code{"HB"}) and robust $\widetilde{t}_{xy,k}$ (\code{"t-tilde"}) and $\widetilde{Q}_{xy,m}$ (\code{"Q-tilde"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$cc}, \code{\$scb}, \code{\$rcb}, \code{\$t}, \code{\$pvt}, \code{\$ttilde}, \code{\$pvttilde}, \code{\$hb}, \code{\$pvhb}, \code{\$qtilde}, \code{\$pvqtilde} at the end of the function call.
+
+From the left-hand side plot we can conclude that $H_0:\rho_{xy,k}=0$ is rejected at $\alpha=5\%$ when $k=-2,-1,0,1$ and is not rejected at $\alpha=5\%$ for $k\neq-2,-1,0,1$ using standard methods, but is not rejected at $\alpha=5\%$ for any $k$ using robust methods. From the right-hand side plot we can conclude that the cumulative hypothesis $H_0:\rho_{xy,0}=...=\rho_{xy,m}=0$ is rejected at $\alpha=5\%$ for all $m$ using standard methods, but is not rejected at any $m$ using robust methods. Subsequently, from the $p$-values in the table we find that using standard methods, $H_0:\rho_{xy,k}=0$ is rejected at $\alpha=1\%$ when $k=-2,-1,0$, at $\alpha=5\%$ for $k=1$, at $\alpha=10\%$ when $k=-5,7$ and is not rejected at $\alpha=10\%$ for all $k\neq-5,-2,-1,0,1,7$, whereas using robust methods it is not rejected at $\alpha=10\%$ for any $k$. Using standard methods the cumulative hypothesis $H_0:\rho_{xy,0}=...=\rho_{xy,m}=0$ is rejected at $\alpha=0.1\%$ when $m=-10,...,-1,1,2$ and at $\alpha=1\%$ for $m=0,3,...,10$, whereas using robust methods it is not rejected at $\alpha=10\%$ for any $m$. Overall, standard testing procedures show evidence of cross-correlation, although the series are uncorrelated from each other. The robust testing procedures provide the correct inference.
+
+\section[Testing zero Pearson correlation: rcorr.test]{Testing zero Pearson correlation: \code{rcorr.test}} \label{sec:rcorrtest}
+
+For multivariate series $\{x_{1t},...,x_{pt}\}$, given a sample $(x_{11},...,x_{1n}),...,(x_{p1},...,x_{pn})$, the null hypothesis $H_0:\rho_{x_i x_j}=0$ of no correlation between variables $\{x_{it},x_{jt}\}$ is tested at $\alpha$ significance level using the sample Pearson correlation $\widehat{\rho}_{x_i x_j}$ and the $p$-value of the robust $t$-type statistic $\widetilde{t}_{x_i x_j}$. This robust procedure is obtained from the $\widetilde{t}_{xy,k}$ test of Section \ref{sec:cctest} setting $x=x_i$, $y=x_j$ and $k=0$.
+
+\subsection*{Example}
+
+We provide an example to illustrate testing zero correlation between variables of a 4-dimensional series $\{x_{1t},x_{2t},x_{3t},x_{4t}\}$ using the function \code{rcorr.test}. We use the simulated data from the series $\{x_t,y_t,z_t,u_t\}$ of Section \ref{sec:cctest}. The pairs $\{x_t,u_t\}$ and $\{z_t,u_t\}$ are independent, $\{x_t,y_t\}$ and $\{y_t,z_t\}$ are uncorrelated but are dependent, while $\{x_t,z_t\}$ and $\{y_t,u_t\}$ are correlated. From the four series only $\{x_t\}$ and $\{u_t\}$ are i.i.d. We bind the series into a matrix.
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> matx <- cbind(x, y, z, u)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We use the function \code{rcorr.test} to evaluate the results on testing. The plot is shown in the Plots pane and the tables are printed on the Console. We don't pass any variables' names and set to 1.5 the scaling factor of the fonts in the plot.\footnote{The default values are \code{plot = TRUE}, \code{table = TRUE}, \code{var.names = NULL} and \code{scale.font = 1}. Setting \code{scale.font = 1.5} is useful in order to upscale the fonts in the plot in order to export it as displayed here; the default value is suggested for viewing the plot in the Plots pane.}
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> library(testcorr)
+R> rcorr.test(matx, plot = TRUE, table = TRUE, var.names = NULL,
++             scale.font = 1.5)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We have the following testing outputs:
+\pagebreak
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.75\textwidth]{ex_rcorrtest_corr.pdf}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.6\textwidth]{ex_rcorrtest_tab.png}
+\end{figure}
+
+The plot is a heatmap of the sample Pearson correlations $\widehat{\rho}_{x_i x_j}$ among all pairs $i,j$ of variables and their $p$-values (in parenthesis) for testing significance of correlation. Four shades of red, from dark to light, indicate significance at level $\alpha=0.1\%,1\%,5\%,10\%$, respectively, and white indicates non-significance at level $\alpha=10\%$. The two tables report the results of the plot. The tables can each be extracted by adding \code{\$pc}, \code{\$pv} at the end of the function call.
+
+From the $p$-values in the plot and the right-hand side table we can conclude that $H_0:\rho_{xy}=0$, $H_0:\rho_{xu}=0$, $H_0:\rho_{yz}=0$ and $H_0:\rho_{zu}=0$ are not rejected at $\alpha=10\%$, $H_0:\rho_{xz}=0$ is rejected at $\alpha=0.1\%$ and $H_0:\rho_{yu}=0$ is rejected at $\alpha=1\%$. Overall, the robust testing procedure provides the correct inference. In contrast, the standard procedure\footnote{The standard procedure is implemented by \code{Hmisc::rcorr} and \code{stats::cor.test}. In these functions, the standard $t$-test differs slightly from that given in Section \ref{sec:cctest}. In \code{Hmisc::rcorr} and \code{stats::cor.test} the statistic $t^\prime_{x_ix_j}=\widehat{\rho}_{x_ix_j}\sqrt{(n-2)/(1-\widehat{\rho}_{x_ix_j}^{\, 2})}$ and critical values from the $t_{n-2}$ distribution are used, while in Section \ref{sec:cctest} we take $t_{x_ix_j}=\sqrt{n}\,\widehat{\rho}_{x_ix_j}\rule{0pt}{8pt}$ and critical values from the $N$(0,1) distribution. For big samples, they give very similar results under $H_0$. For example, in Section \ref{sec:cctest} we find $p$-value of 0.00112 in testing $H_0:\rho_{xy}=0$ with the standard $t_{xy}$ test, while in the output from \code{Hmisc::rcorr} it is 0.00106 using the standard $t^\prime_{xy}$ test.} gives wrong inference when the series are uncorrelated but dependent. To demonstrate this, we use the function \code{rcorr} from the package \pkg{Hmisc} \citep{hmisc} to evaluate the sample Pearson correlations and their $p$-values for testing significance of correlation.
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> library(Hmisc)
+R> print(format(round(rcorr(matx)$r, 3), nsmall = 3), quote = FALSE)
+R> print(format(round(rcorr(matx)$P, 3), nsmall = 3), quote = FALSE)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We have the following outputs:
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.65\textwidth]{ex_rcorr_tab.png}
+\end{figure}
+
+From the $p$-values in the right-hand side table we can conclude that $H_0:\rho_{xu}=0$ and $H_0:\rho_{zu}=0$ are not rejected at $\alpha=10\%$, $H_0:\rho_{xz}=0$, $H_0:\rho_{yz}=0$ and $H_0:\rho_{yu}=0$ are rejected at $\alpha=0.1\%$ and $H_0:\rho_{xy}=0$ is rejected at $\alpha=1\%$. Hence, using the standard procedure we wrongly conclude that the series $\{x_t\}$ with $\{y_t\}$ and $\{y_t\}$ with $\{z_t\}$ are correlated.
+
+\section[Testing i.i.d. property: iid.test]{Testing i.i.d. property: \code{iid.test}} \label{sec:iidtest}
+
+For a univariate series $\{x_t\}$, given a sample $x_1,...,x_n$, the null hypothesis of the i.i.d. property is tested at lag $k=1,2,...$ by verifying $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0$,  using the $J_{x,|x|,k}$ and $J_{x,x^2,k}$ statistics.\footnote{Notation: $\rho_{x,k}={\rm corr}(x_t,x_{t-k})$, $\rho_{|x|,k}={\rm corr}(|x_t-\mu|,|x_{t-k}-\mu|)$, $\rho_{x^2,k}={\rm corr}((x_t-\mu)^2,(x_{t-k}-\mu)^2)$ and $\mu=Ex_t$.} The null hypothesis of the i.i.d. property at cumulative lags $m=1,2,...$ is tested by verifying $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0,k=1,...,m$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0,k=1,...,m$, using the $C_{x,|x|,m}$ and $C_{x,x^2,m}$ statistics. The following notation is used.
+%
+\begin{align*}
+J_{x,|x|,k}&=\frac{n^2}{n-k}(\widehat{\rho}_{x,k}^{\,2}+\widehat{\rho}_{|x|,k}^{\,2}), \quad C_{x,|x|,m}=\sum\limits_{k=1}^{m}J_{x,|x|,k}, \\
+J_{x,x^2,k}&=\frac{n^2}{n-k}(\widehat{\rho}_{x,k}^{\,2}+\widehat{\rho}_{x^2,k}^{\,2}), \quad C_{x,x^2,m}=\sum\limits_{k=1}^{m}J_{x,x^2,k},
+\end{align*}
+%
+where $\widehat{\rho}_{x,k}=\widehat{{\rm corr}}(x_t,x_{t-k})$, $\widehat{\rho}_{|x|,k}=\widehat{{\rm corr}}(|x_t-\bar{x}|,|x_{t-k}-\bar{x}|)$, $\widehat{\rho}_{x^2,k}=\widehat{{\rm corr}}((x_t-\bar{x})^2,(x_{t-k}-\bar{x})^2)$ and $\bar{x}=n^{-1} \sum_{t=1}^n x_t$ with $\widehat{{\rm corr}}$ denoting the sample correlation estimate.
+
+Applying the tests, at significance level $\alpha$, $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0$ is rejected when $J_{x,|x|,k}>\chi^2_{2,\alpha}$ or $J_{x,x^2,k}>\chi^2_{2,\alpha}$. In turn, $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0,k=1,...,m$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0,k=1,...,m$ is rejected when $C_{x,|x|,m}>\chi^2_{2m,\alpha}$ or $C_{x,x^2,m}>\chi^2_{2m,\alpha}$. Here, $\chi^2_{m,\alpha}$ stands for the upper $\alpha$ quantile of $\chi^2_{m}$ distribution.
+
+\subsection*{Example}
+
+We provide an example to illustrate testing for the i.i.d. property of a univariate series $\{x_t\}$ using the function \code{iid.test}. We use the simulated data from the series $\{x_t\}$ of Section \ref{sec:cctest}. The series $\{x_t\}$ is i.i.d.
+
+We use the function \code{iid.test} to evaluate the results on testing for maximum 10 lags at significance level $\alpha=5\%$. The plots are shown in the Plots pane and the table is printed on the Console. We don't pass any variable's name and set to 2 the scaling factor of the fonts in the plots.\footnote{The first letter of the variable's name is used as subscript instead of $x$ in the statistics when \code{var.name} is not \code{NULL}.}\textsuperscript{,}\footnote{The default values are \code{alpha = 0.05}, \code{plot = TRUE}, \code{table = TRUE}, \code{var.name = NULL} and \code{scale.font = 1}. Setting \code{scale.font = 2} is useful in order to upscale the fonts in the plots in order to export them as displayed here; the default value is suggested for viewing the plots in the Plots pane.}
+%
+\begin{CodeChunk}
+\begin{CodeInput}
+R> library(testcorr)
+R> iid.test(x, max.lag = 10, alpha = 0.05, plot = TRUE, table = TRUE,
++           var.name = NULL, scale.font = 2)
+\end{CodeInput}
+\end{CodeChunk}
+%
+We have the following testing outputs:
+
+\begin{figure}[h!]
+\centering
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_iidtest_j.pdf}}
+\subfigure{\includegraphics[width=0.49\textwidth]{ex_iidtest_c.pdf}}
+\end{figure}
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.65\textwidth]{ex_iidtest_tab.png}
+\end{figure}
+
+The plots are graphing for maximum 10 lags, the test statistics $J_{x,|x|,k}$, $J_{x,x^2,k}$ (left), the cumulative test statistics $C_{x,|x|,m}$, $C_{x,x^2,m}$ (right) and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: $J_{x,|x|,k}$ (\code{"J[x,|x|]"}), $J_{x,x^2,k}$ (\code{"J[x,x\textsuperscript{2}]"}), $C_{x,|x|,m}$ (\code{"C[x,|x|]"}) and $C_{x,x^2,m}$ (\code{"C[x,x\textsuperscript{2}]"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$jab}, \code{\$pvjab}, \code{\$jsq}, \code{\$pvjsq}, \code{\$cab}, \code{\$pvcab}, \code{\$csq}, \code{\$pvcsq} at the end of the function call.
+
+From the left-hand side plot we can conclude that $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0$ is not rejected at $\alpha=5\%$ for any $k$ except $k=3,8$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0$ is not rejected at $\alpha=5\%$ for any $k$ except $k=8$. From the right-hand side plot we can conclude that the cumulative hypothesis $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0,k=1,...,m$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0,k=1,...,m$ is not rejected at $\alpha=5\%$ for any $m$. Subsequently, from the $p$-values in the table we find that $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0$ is rejected at $\alpha=5\%$ for $k=3,8$ and is not reject at $\alpha=10\%$ when $k\neq3,8$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0$ is rejected at $\alpha=5\%$ for $k=8$ and at $\alpha=10\%$ for $k=1,3$ and is not rejected at $\alpha=10\%$ when $k\neq1,3,8$. The cumulative hypothesis $H_0:\rho_{x,k}=0,\rho_{|x|,k}=0,k=1,...,m$ is rejected at $\alpha=10\%$ for $m=3$ and is not rejected at $\alpha=10\%$ when $m\neq3$ or $H_0:\rho_{x,k}=0,\rho_{x^2,k}=0,k=1,...,m$ is rejected at $\alpha=10\%$ for $m=1,3,4,8$ and is not rejected at $\alpha=10\%$ for $m\neq1,3,4,8$. Overall, the testing procedures provide the correct inference.
+
+\section{Remarks} \label{sec:rem}
+
+The theory and Monte Carlo study in \cite{DallaGiraitisPhillips2019} suggest that:
+\begin{itemize}
+\item[(i)] In testing for autocorrelation the series needs to have constant mean.
+\item[(ii)] In testing for cross-correlation each of the series needs to have constant mean and to be serially uncorrelated when applying the portmanteau type statistics or at least one when applying the $t$-type tests.
+\item[(iii)] In testing for Pearson correlation at least one of the series needs to have constant mean and to be serially uncorrelated.
+\item[(iv)] For relatively large lag it may happen that the robust portmanteau statistic is negative. In such a case, missing values (\code{NA}) are reported for the statistic and its $p$-value.
+\item[(v)] The values $\lambda=1.96,2.576$ are good candidates for the threshold in the robust portmanteau statistics, with $\lambda=2.576$ performing better at relatively large lags.
+\end{itemize}
+
+\section*{Acknowledgments}
+
+Dalla acknowledges financial support from ELKE-EKPA. Phillips acknowledges support from the Kelly Fund at the University of Auckland and a KLC Fellowship at Singapore Management University.
+
+\nocite{Yule1926}
+\nocite{LjungBox1978}
+\nocite{HaughBox1977}
+\nocite{Pearson1896}
+
+\bibliography{testcorr}
+
+\end{document}
