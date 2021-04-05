@@ -5,7 +5,7 @@
 #' Testing zero autocorrelation
 #'
 #' The function ac.test computes the test statistics for examining the null hypothesis
-#' of zero autocorrelation for univariate time series given in Dalla, Giraitis and Phillips (2019).
+#' of zero autocorrelation for univariate time series given in Dalla, Giraitis and Phillips (2020).
 #'
 #' @usage ac.test(x, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE,
 #'         table = TRUE, var.name = NULL, scale.font = 1)
@@ -39,12 +39,11 @@
 #' @author
 #' Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips
 #' @references
-#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 #' @examples
 #' x <- rnorm(100)
 #' ac.test(x, max.lag = 10)
 #' @importFrom stats acf pchisq pnorm qchisq qnorm is.ts
-#' @importFrom assertthat is.string
 #' @import ggplot2
 #' @importFrom scales pretty_breaks
 #' @importFrom knitr kable
@@ -63,7 +62,7 @@ ac.test <- function(x, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE, table
   if (!is.numeric(lambda)) stop('argument "lambda" must be numeric')
   if (!is.logical(plot)) stop('argument "plot" must be logical')
   if (!is.logical(table)) stop('argument "table" must be logical')
-  if (!is.null(var.name) & NROW(var.name) == 1 & !is.string(var.name)) stop('argument "var.names" must be NULL or string')
+  if (!is.null(var.name) & NROW(var.name) == 1 & !is.character(var.name)) stop('argument "var.name" must be NULL or string')
   if (!is.numeric(scale.font)) stop('argument "scale.font" must be numeric')
   if (NCOL(x) != 1) stop('argument "x" must be univariate')
   if (any(is.na(x))) stop('argument "x" must not contain missing values')
@@ -74,7 +73,7 @@ ac.test <- function(x, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE, table
     if (NROW(colnames(x)) != NCOL(x)) stop('argument "x" must have one name')
   }
   if (!is.null(var.name)) {
-    if (NROW(var.name) != NCOL(x)) stop('argument "var.names" must contain one name')
+    if (NROW(var.name) != NCOL(x)) stop('argument "var.name" must contain one name')
   }
   if (scale.font <= 0) stop('argument "scale.font" must be positive')
 
@@ -218,7 +217,7 @@ ac.test <- function(x, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE, table
 #' Testing iid property
 #'
 #' The function iid.test computes the test statistics for examining the null hypothesis
-#' of i.i.d. property for univariate series given in Dalla, Giraitis and Phillips (2019).
+#' of i.i.d. property for univariate series given in Dalla, Giraitis and Phillips (2020).
 #'
 #' @usage iid.test(x, max.lag, alpha = 0.05, plot = TRUE, table = TRUE,
 #'          var.name = NULL, scale.font = 1)
@@ -247,12 +246,11 @@ ac.test <- function(x, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE, table
 #' @author
 #' Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips
 #' @references
-#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 #' @examples
 #' x <- rnorm(100)
 #' iid.test(x, max.lag = 10)
 #' @importFrom stats acf pchisq pnorm qchisq qnorm
-#' @importFrom assertthat is.string
 #' @import ggplot2
 #' @importFrom scales pretty_breaks
 #' @importFrom knitr kable
@@ -270,7 +268,7 @@ iid.test <- function(x, max.lag, alpha = 0.05, plot = TRUE, table = TRUE, var.na
   if (!is.numeric(alpha)) stop('argument "alpha" must be numeric')
   if (!is.logical(plot)) stop('argument "plot" must be logical')
   if (!is.logical(table)) stop('argument "table" must be logical')
-  if (!is.null(var.name) & NROW(var.name) == 1 & !is.string(var.name)) stop('argument "var.names" must be NULL or string')
+  if (!is.null(var.name) & NROW(var.name) == 1 & !is.character(var.name)) stop('argument "var.name" must be NULL or string')
   if (!is.numeric(scale.font)) stop('argument "scale.font" must be numeric')
   if (NCOL(x) != 1) stop('argument "x" must be univariate')
   if (any(is.na(x))) stop('argument "x" must not contain missing values')
@@ -280,7 +278,7 @@ iid.test <- function(x, max.lag, alpha = 0.05, plot = TRUE, table = TRUE, var.na
     if (NROW(colnames(x)) != NCOL(x)) stop('argument "x" must have one name')
   }
   if (!is.null(var.name)) {
-    if (NROW(var.name) != NCOL(x)) stop('argument "var.names" must contain one name')
+    if (NROW(var.name) != NCOL(x)) stop('argument "var.name" must contain one name')
   }
   if (scale.font <= 0) stop('argument "scale.font" must be positive')
 
@@ -380,7 +378,7 @@ iid.test <- function(x, max.lag, alpha = 0.05, plot = TRUE, table = TRUE, var.na
 #' Testing zero cross-correlation
 #'
 #' The function cc.test computes the test statistics for examining the null hypothesis
-#' of zero cross-correlation for bivariate time series given in Dalla, Giraitis and Phillips (2019).
+#' of zero cross-correlation for bivariate time series given in Dalla, Giraitis and Phillips (2020).
 #'
 #' @usage cc.test(x, y, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE,
 #'         table = TRUE, var.names = NULL, scale.font = 1)
@@ -415,13 +413,12 @@ iid.test <- function(x, max.lag, alpha = 0.05, plot = TRUE, table = TRUE, var.na
 #' @author
 #' Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips
 #' @references
-#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 #' @examples
 #' x <- rnorm(100)
 #' y <- rnorm(100)
 #' cc.test(x, y, max.lag = 10)
 #' @importFrom stats acf ccf pchisq pnorm qchisq qnorm
-#' @importFrom assertthat is.string
 #' @import ggplot2
 #' @importFrom scales pretty_breaks
 #' @importFrom knitr kable
@@ -445,7 +442,7 @@ cc.test <- function(x, y, max.lag, alpha = 0.05, lambda = 2.576, plot = TRUE, ta
   if (!is.numeric(lambda)) stop('argument "lambda" must be numeric')
   if (!is.logical(plot)) stop('argument "plot" must be logical')
   if (!is.logical(table)) stop('argument "table" must be logical')
-  if (!is.null(var.names) & NROW(var.names) == 2 & (!is.string(var.names[1]) | !is.string(var.names[2])))  stop('argument "var.names" must be NULL or string')
+  if (!is.null(var.names) & NROW(var.names) == 2 & (!is.character(var.names[1]) | !is.character(var.names[2])))  stop('argument "var.names" must be NULL or string')
   if (!is.numeric(scale.font)) stop('argument "scale.font" must be numeric')
   if (NCOL(x) != 1) stop('argument "x" must be univariate')
   if (NCOL(y) != 1) stop('argument "y" must be univariate')
@@ -618,7 +615,7 @@ cc.test.t.tmink <- function(x, y, max.lag, alpha, lambda) {
 #' Testing zero Pearson correlation
 #'
 #' The function rcorr.test computes the test statistics for examining the null hypothesis
-#' of zero Pearson correlation for multivariate series in Dalla, Giraitis and Phillips (2019).
+#' of zero Pearson correlation for multivariate series in Dalla, Giraitis and Phillips (2020).
 #'
 #' @usage rcorr.test(x, plot = TRUE, table = TRUE, var.names = NULL,
 #'            scale.font = 1)
@@ -638,12 +635,11 @@ cc.test.t.tmink <- function(x, y, max.lag, alpha, lambda) {
 #' @author
 #' Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips
 #' @references
-#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+#' Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 #' @examples
 #' x <- matrix(rnorm(400),100)
 #' rcorr.test(x)
 #' @importFrom stats cor pnorm
-#' @importFrom assertthat is.string
 #' @import ggplot2
 #' @importFrom reshape2 melt
 #' @importFrom forcats fct_rev
@@ -659,7 +655,7 @@ rcorr.test <- function(x, plot = TRUE, table = TRUE, var.names = NULL, scale.fon
   }
   if (!is.logical(plot)) stop('argument "plot" must be logical')
   if (!is.logical(table)) stop('argument "table" must be logical')
-  if (!is.null(var.names) & NROW(var.names) > 1 & !is.string(var.names)) stop('argument "var.names" must be NULL or string')
+  if (!is.null(var.names) & NROW(var.names) > 1 & !is.character(var.names)) stop('argument "var.names" must be NULL or string')
   if (!is.numeric(scale.font)) stop('argument "scale.font" must be numeric')
   if (NCOL(x) == 1) stop('argument "x" must be multivariate')
   if (any(is.na(x))) stop('argument "x" must not contain missing values')
@@ -812,7 +808,7 @@ plotcorr <- function(max.lag, seq.max.lag, ac.cc, s.cb, r.cb, alpha, n, uni.biv,
     geom_line(aes_(y = ~scbl), colour = "gray50", linetype = "dashed", size = 1) +
     geom_line(aes_(y = ~rcb, colour = "rcb"), linetype = "dashed", size = 1) +
     geom_line(aes_(y = ~rcbl), colour = "red", linetype = "dashed", size = 1) +
-    scale_colour_manual("", breaks = c("scb", "rcb"), values = c("red", "gray50"), labels = c(label.scb, label.rcb))
+    scale_colour_manual("", breaks = c("scb", "rcb"), values = c("gray50", "red"), labels = c(label.scb, label.rcb))
 
   if (uni.biv == 1) {
     g.corr <- g.corr + theme(plot.title = element_text(hjust = 0.5)) + ggtitle(bquote(Autocorrelation~of~.(my.names)[t]))

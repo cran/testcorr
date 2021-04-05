@@ -43,7 +43,7 @@ An object of class "cc.test", which is a list with the following components:
 }
 \description{
 The function cc.test computes the test statistics for examining the null hypothesis
-of zero cross-correlation for bivariate time series given in Dalla, Giraitis and Phillips (2019).
+of zero cross-correlation for bivariate time series given in Dalla, Giraitis and Phillips (2020).
 }
 \details{
 The standard \eqn{t} and robust \eqn{\widetilde{t}}{t-tilde} statistics are for testing the null hypothesis \eqn{H_0:\rho_k=0}{H[0]:\rho[k]=0} at lags \eqn{k=-max.lag,...,-1,0,1,max.lag},
@@ -59,7 +59,7 @@ y <- rnorm(100)
 cc.test(x, y, max.lag = 10)
 }
 \references{
-Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 }
 \author{
 Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips

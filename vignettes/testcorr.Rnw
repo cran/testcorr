@@ -17,7 +17,7 @@
 
 %% my packages
 \usepackage{amsmath}
-\usepackage{subfigure}
+\usepackage{subfig}
 \usepackage[onehalfspacing]{setspace}
 \usepackage{geometry}
 \usepackage{enumitem}
@@ -34,7 +34,7 @@
 \Shorttitle{The \pkg{testcorr} Package}
 
 \Abstract{
-The \proglang{R} package \pkg{testcorr} implements standard and robust procedures for testing the significance of the autocorrelation in univariate data and the cross-correlation in bivariate data. It also includes tests for the significance of pairwise Pearson correlation in multivariate data and the i.i.d. property for univariate data. The standard testing procedures on significance of correlation are used commonly by practitioners while their robust versions were developed in \cite{DallaGiraitisPhillips2019}, where the tests for i.i.d. property can be also found. This document briefly outlines the testing procedures and provides simple examples.
+The \proglang{R} package \pkg{testcorr} implements standard and robust procedures for testing the significance of the autocorrelation in univariate data and the cross-correlation in bivariate data. It also includes tests for the significance of pairwise Pearson correlation in multivariate data and the i.i.d. property for univariate data. The standard testing procedures on significance of correlation are used commonly by practitioners while their robust versions were developed in \cite{DallaGiraitisPhillips2020}, where the tests for i.i.d. property can be also found. This document briefly outlines the testing procedures and provides simple examples.
 }
 
 \Keywords{autocorrelation, cross-correlation, Pearson correlation, i.i.d., \proglang{R}}
@@ -67,9 +67,9 @@ The \proglang{R} package \pkg{testcorr} implements standard and robust procedure
 
 \section{Introduction} \label{sec:intro}
 
-Inference on the significance of the autocorrelation $\rho_k={\rm corr}(x_t,x_{t-k})$ or the cross-correlation $\rho_{xy,k}={\rm corr}(x_t,y_{t-k})$ is a common first step in the analysis of univariate $\{x_t\}$ or bivariate $\{x_t,y_t\}$ time series data. Moreover, it is common to test the significance of pair-wise correlations $\rho_{x_ix_j}={\rm corr}(x_{it},x_{jt})$ in multivariate $\{x_{1t},x_{2t},...,x_{pt}\}$ data, cross-sectional or time series. Standard inference procedures\footnote{Like those implemented in the \pkg{stats} \citep{R}, \pkg{sarima} \citep{sarima}, \pkg{portes} \citep{portes} and \pkg{Hmisc} \citep{hmisc} packages, functions \code{stats::acf}, \code{stats::ccf}, \code{stats::Box.test}, \code{sarima::acfIidTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "iid"}, \code{portes::LjungBox}, \code{stats::cor.test} and \code{Hmisc::rcorr}.} are valid for i.i.d. univariate or mutually independent bivariate/multivariate data and their size can be significantly distorted otherwise, in particular, by heteroscedasticity and dependence. The robust methods\footnote{These robust methods are valid under more general settings compared to those in the \pkg{sarima} \citep{sarima} and \pkg{normwhn.test} \citep{normwhntest} packages, functions \code{sarima::acfGarchTest}, \code{sarima::acfWnTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "garch"} and \code{normwhn.test::whitenoise.test}.} given in \cite{DallaGiraitisPhillips2019} allow testing for significant autocorrelation/cross-correlation/correlation under more general settings, e.g., they allow for heteroscedasticity and dependence in each series and mutual dependence across series.
+Inference on the significance of the autocorrelation $\rho_k={\rm corr}(x_t,x_{t-k})$ or the cross-correlation $\rho_{xy,k}={\rm corr}(x_t,y_{t-k})$ is a common first step in the analysis of univariate $\{x_t\}$ or bivariate $\{x_t,y_t\}$ time series data. Moreover, it is common to test the significance of pair-wise correlations $\rho_{x_ix_j}={\rm corr}(x_{it},x_{jt})$ in multivariate $\{x_{1t},x_{2t},...,x_{pt}\}$ data, cross-sectional or time series. Standard inference procedures\footnote{Like those implemented in the \pkg{stats} \citep{R}, \pkg{sarima} \citep{sarima}, \pkg{portes} \citep{portes} and \pkg{Hmisc} \citep{hmisc} packages, functions \code{stats::acf}, \code{stats::ccf}, \code{stats::Box.test}, \code{sarima::acfIidTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "iid"}, \code{portes::LjungBox}, \code{stats::cor.test} and \code{Hmisc::rcorr}.} are valid for i.i.d. univariate or mutually independent bivariate/multivariate data and their size can be significantly distorted otherwise, in particular, by heteroscedasticity and dependence. The robust methods\footnote{These robust methods are valid under more general settings compared to those in the \pkg{sarima} \citep{sarima} and \pkg{normwhn.test} \citep{normwhntest} packages, functions \code{sarima::acfGarchTest}, \code{sarima::acfWnTest}, \code{sarima::whiteNoiseTest} with \code{h0 = "garch"} and \code{normwhn.test::whitenoise.test}.} given in \cite{DallaGiraitisPhillips2020} allow testing for significant autocorrelation/cross-correlation/correlation under more general settings, e.g., they allow for heteroscedasticity and dependence in each series and mutual dependence across series.
 
-The \proglang{R} \citep{R} package \pkg{testcorr} includes the functions \code{ac.test} and \code{cc.test} that implement the standard and robust procedures for testing significance of autocorrelation and cross-correlation, respectively. Moreover, the package provides the function \code{rcorr.test} that evaluates the sample Pearson correlation matrix for multivariate data with robust $p$-values for testing significance of its elements. The package also contains the function \code{iid.test} that conducts testing procedures for the i.i.d. property\footnote{Existing procedures include the rank test, the turning point test, the test for a Bernoulli scheme and the difference-sign test which are included in the package \pkg{spgs} \citep{spgs}, functions \code{spgs::rank.test}, \code{spgs::turningpoint.test}, \code{spgs::diid.test}, \code{spgs::diffsign.test}.} of univariate data introduced in \cite{DallaGiraitisPhillips2019}. Sections \ref{sec:actest}-\ref{sec:iidtest} describe the testing procedures that each function implements and provide examples. Section \ref{sec:rem} outlines some suggestions relating to the application of the testing procedures.
+The \proglang{R} \citep{R} package \pkg{testcorr} includes the functions \code{ac.test} and \code{cc.test} that implement the standard and robust procedures for testing significance of autocorrelation and cross-correlation, respectively. Moreover, the package provides the function \code{rcorr.test} that evaluates the sample Pearson correlation matrix for multivariate data with robust $p$-values for testing significance of its elements. The package also contains the function \code{iid.test} that conducts testing procedures for the i.i.d. property\footnote{Existing procedures include the rank test, the turning point test, the test for a Bernoulli scheme and the difference-sign test which are included in the package \pkg{spgs} \citep{spgs}, functions \code{spgs::rank.test}, \code{spgs::turningpoint.test}, \code{spgs::diid.test}, \code{spgs::diffsign.test}.} of univariate data introduced in \cite{DallaGiraitisPhillips2020}. Sections \ref{sec:actest}-\ref{sec:iidtest} describe the testing procedures that each function implements and provide examples. Section \ref{sec:rem} outlines some suggestions relating to the application of the testing procedures.
 
 \section[Testing zero autocorrelation: ac.test]{Testing zero autocorrelation: \code{ac.test}} \label{sec:actest}
 
@@ -93,7 +93,7 @@ Applying standard and robust tests, at significance level $\alpha$, $H_0:\rho_k=
 
 \subsection*{Example}
 
-We provide an example to illustrate testing for zero autocorrelation of a univariate time series $\{x_t\}$ using the function \code{ac.test}. We simulate $n=300$ data as GARCH(1,1): $x_t=\sigma_t \varepsilon_t$ with $\sigma_t^2=1+0.2x_{t-1}^2+0.7\sigma_{t-1}^2$ and $\varepsilon_t \sim$ i.i.d. $N$(0,1).\footnote{We initialize $\sigma^2_1={\rm var}(x_t)=10$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ is not autocorrelated but is not i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2019}. They find that the standard testing procedures are a bit oversized (e.g. by around 8\% when $k,m=1$), while the robust tests are correctly sized. We choose a realization where this is evident.
+We provide an example to illustrate testing for zero autocorrelation of a univariate time series $\{x_t\}$ using the function \code{ac.test}. We simulate $n=300$ data as GARCH(1,1): $x_t=\sigma_t \varepsilon_t$ with $\sigma_t^2=1+0.2x_{t-1}^2+0.7\sigma_{t-1}^2$ and $\varepsilon_t \sim$ i.i.d. $N$(0,1).\footnote{We initialize $\sigma^2_1={\rm var}(x_t)=10$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ is not autocorrelated but is not i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2020}. They find that the standard testing procedures are a bit oversized (e.g. by around 8\% when $k,m=1$), while the robust tests are correctly sized. We choose a realization where this is evident.
 %
 \begin{CodeChunk}
 \begin{CodeInput}
@@ -125,13 +125,14 @@ We have the following testing outputs:
 
 \begin{figure}[h!]
 \centering
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_actest_corr.pdf}}
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_actest_q.pdf}}
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_actest_corr.pdf}}
+\enskip
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_actest_q.pdf}}
 \end{figure}
 \pagebreak
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.98\textwidth]{ex_actest_tab.png}
+\includegraphics[width=0.98\textwidth]{ex_actest_tab.PNG}
 \end{figure}
 
 The left-hand side plot is graphing for maximum 10 lags, the sample autocorrelation $\widehat{\rho}_k$ (\code{"AC"}), the standard and robust CB(95\%). The right-hand side plot is graphing for maximum 10 lags, the cumulative test statistics $LB_m$, $\widetilde{Q}_m$ and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: standard $t_k$ (\code{"t"}) and $LB_m$ (\code{"LB"}) and robust $\widetilde{t}_k$ (\code{"t-tilde"}) and $\widetilde{Q}_m$ (\code{"Q-tilde"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$ac}, \code{\$scb}, \code{\$rcb}, \code{\$t}, \code{\$pvt}, \code{\$ttilde}, \code{\$pvttilde}, \code{\$lb}, \code{\$pvlb}, \code{\$qtilde}, \code{\$pvqtilde} at the end of the function call.
@@ -162,7 +163,7 @@ The above procedures where outlined for $k,m\geq0$. For $k,m<0$, the tests are a
 
 \subsection*{Example}
 
-We provide an example to illustrate testing for zero cross-correlation of a bivariate time series $\{x_t,y_t\}$ using the function \code{cc.test}. We simulate $n=300$ data as noise and SV-AR(1) using the same noise in the AR(1) part: $x_t=\varepsilon_t$ and $y_t=\exp(z_t)u_t$ with $z_t=0.7z_{t-1}+\varepsilon_t$, $\varepsilon_t, u_t \sim$ i.i.d. $N$(0,1), $\{\varepsilon_t\}$ and $\{u_t\}$ mutually independent.\footnote{We initialize $z_1=Ez_t=0$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ and $\{y_t\}$ are uncorrelated but are not independent of each other, both are serially uncorrelated and only $\{x_t\}$ is i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2019}. They find that the standard testing procedures are rather oversized (e.g. by around 25\% when $k,m=0$), while the robust tests are correctly sized. We choose a realization where this is evident.
+We provide an example to illustrate testing for zero cross-correlation of a bivariate time series $\{x_t,y_t\}$ using the function \code{cc.test}. We simulate $n=300$ data as noise and SV-AR(1) using the same noise in the AR(1) part: $x_t=\varepsilon_t$ and $y_t=\exp(z_t)u_t$ with $z_t=0.7z_{t-1}+\varepsilon_t$, $\varepsilon_t, u_t \sim$ i.i.d. $N$(0,1), $\{\varepsilon_t\}$ and $\{u_t\}$ mutually independent.\footnote{We initialize $z_1=Ez_t=0$, simulate 400 observations and drop the first 100.} The series $\{x_t\}$ and $\{y_t\}$ are uncorrelated but are not independent of each other, both are serially uncorrelated and only $\{x_t\}$ is i.i.d. This is one of the models examined in the Monte Carlo study of \cite{DallaGiraitisPhillips2020}. They find that the standard testing procedures are rather oversized (e.g. by around 25\% when $k,m=0$), while the robust tests are correctly sized. We choose a realization where this is evident.
 %
 \begin{CodeChunk}
 \begin{CodeInput}
@@ -194,13 +195,14 @@ We have the following testing outputs:
 
 \begin{figure}[h!]
 \centering
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_cctest_corr.pdf}}
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_cctest_q.pdf}}
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_cctest_corr.pdf}}
+\enskip
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_cctest_q.pdf}}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.98\textwidth]{ex_cctest_tab.png}
+\includegraphics[width=0.98\textwidth]{ex_cctest_tab.PNG}
 \end{figure}
 
 The left-hand side plot is graphing for maximum $\pm10$ lags, the sample cross-correlation $\widehat{\rho}_{xy,k}$ (\code{"CC"}), the standard and robust CB(95\%). The right-hand side plot is graphing for maximum $\pm$10 lags, the cumulative test statistics $HB_{xy,m}$, $\widetilde{Q}_{xy,m}$ and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: standard $t_{xy,k}$ (\code{"t"}) and $HB_{xy,m}$ (\code{"HB"}) and robust $\widetilde{t}_{xy,k}$ (\code{"t-tilde"}) and $\widetilde{Q}_{xy,m}$ (\code{"Q-tilde"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$cc}, \code{\$scb}, \code{\$rcb}, \code{\$t}, \code{\$pvt}, \code{\$ttilde}, \code{\$pvttilde}, \code{\$hb}, \code{\$pvhb}, \code{\$qtilde}, \code{\$pvqtilde} at the end of the function call.
@@ -240,7 +242,7 @@ We have the following testing outputs:
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.6\textwidth]{ex_rcorrtest_tab.png}
+\includegraphics[width=0.6\textwidth]{ex_rcorrtest_tab.PNG}
 \end{figure}
 
 The plot is a heatmap of the sample Pearson correlations $\widehat{\rho}_{x_i x_j}$ among all pairs $i,j$ of variables and their $p$-values (in parenthesis) for testing significance of correlation. Four shades of red, from dark to light, indicate significance at level $\alpha=0.1\%,1\%,5\%,10\%$, respectively, and white indicates non-significance at level $\alpha=10\%$. The two tables report the results of the plot. The tables can each be extracted by adding \code{\$pc}, \code{\$pv} at the end of the function call.
@@ -259,7 +261,7 @@ We have the following outputs:
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.65\textwidth]{ex_rcorr_tab.png}
+\includegraphics[width=0.65\textwidth]{ex_rcorr_tab.PNG}
 \end{figure}
 
 From the $p$-values in the right-hand side table we can conclude that $H_0:\rho_{xu}=0$ and $H_0:\rho_{zu}=0$ are not rejected at $\alpha=10\%$, $H_0:\rho_{xz}=0$, $H_0:\rho_{yz}=0$ and $H_0:\rho_{yu}=0$ are rejected at $\alpha=0.1\%$ and $H_0:\rho_{xy}=0$ is rejected at $\alpha=1\%$. Hence, using the standard procedure we wrongly conclude that the series $\{x_t\}$ with $\{y_t\}$ and $\{y_t\}$ with $\{z_t\}$ are correlated.
@@ -295,13 +297,14 @@ We have the following testing outputs:
 
 \begin{figure}[h!]
 \centering
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_iidtest_j.pdf}}
-\subfigure{\includegraphics[width=0.49\textwidth]{ex_iidtest_c.pdf}}
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_iidtest_j.pdf}}
+\enskip
+\subfloat{\includegraphics[width=0.49\textwidth]{ex_iidtest_c.pdf}}
 \end{figure}
 
 \begin{figure}[h!]
 \centering
-\includegraphics[width=0.65\textwidth]{ex_iidtest_tab.png}
+\includegraphics[width=0.65\textwidth]{ex_iidtest_tab.PNG}
 \end{figure}
 
 The plots are graphing for maximum 10 lags, the test statistics $J_{x,|x|,k}$, $J_{x,x^2,k}$ (left), the cumulative test statistics $C_{x,|x|,m}$, $C_{x,x^2,m}$ (right) and their critical values at 5\% significance level (\code{"cv(5\%)"}). The table reports the results of the plots along with the $p$-values for all the statistics: $J_{x,|x|,k}$ (\code{"J[x,|x|]"}), $J_{x,x^2,k}$ (\code{"J[x,x\textsuperscript{2}]"}), $C_{x,|x|,m}$ (\code{"C[x,|x|]"}) and $C_{x,x^2,m}$ (\code{"C[x,x\textsuperscript{2}]"}). The columns of the table can each be extracted by adding \code{\$lag}, \code{\$jab}, \code{\$pvjab}, \code{\$jsq}, \code{\$pvjsq}, \code{\$cab}, \code{\$pvcab}, \code{\$csq}, \code{\$pvcsq} at the end of the function call.
@@ -310,7 +313,7 @@ From the left-hand side plot we can conclude that $H_0:\rho_{x,k}=0,\rho_{|x|,k}
 
 \section{Remarks} \label{sec:rem}
 
-The theory and Monte Carlo study in \cite{DallaGiraitisPhillips2019} suggest that:
+The theory and Monte Carlo study in \cite{DallaGiraitisPhillips2020} suggest that:
 \begin{itemize}
 \item[(i)] In testing for autocorrelation the series needs to have constant mean.
 \item[(ii)] In testing for cross-correlation each of the series needs to have constant mean and to be serially uncorrelated when applying the portmanteau type statistics or at least one when applying the $t$-type tests.

@@ -36,7 +36,7 @@ An object of class "iid.test", which is a list with the following components:
 }
 \description{
 The function iid.test computes the test statistics for examining the null hypothesis
-of i.i.d. property for univariate series given in Dalla, Giraitis and Phillips (2019).
+of i.i.d. property for univariate series given in Dalla, Giraitis and Phillips (2020).
 }
 \details{
 The \eqn{J_{x,|x|}}{J[x,|x|]} and \eqn{J_{x,x^2}}{J[x,x^2]} statistics are for testing the null hypothesis of i.i.d. at lag \eqn{k}, \eqn{k=1,...,max.lag},
@@ -50,7 +50,7 @@ x <- rnorm(100)
 iid.test(x, max.lag = 10)
 }
 \references{
-Dalla, V., Giraitis, L. and Phillips, P. C. B. (2019). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194.pdf}.
+Dalla, V., Giraitis, L. and Phillips, P. C. B. (2020). "Robust Tests for White Noise and Cross-Correlation". Cowles Foundation, Discussion Paper No. 2194, \url{https://cowles.yale.edu/sites/default/files/files/pub/d21/d2194-r.pdf}.
 }
 \author{
 Violetta Dalla, Liudas Giraitis and Peter C. B. Phillips
